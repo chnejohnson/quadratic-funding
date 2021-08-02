@@ -17,8 +17,6 @@ You should have received a copy of the GNU Affero General Public License
 along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 """
-import numpy as np
-
 
 
 CLR_PERCENTAGE_DISTRIBUTED = 0
@@ -26,31 +24,20 @@ GRANT_CONTRIBUTIONS_EXAMPLE = [
     {
         'id': '4',
         'contributions': [
-            { '1': 10.0 },
-            { '2': 5.0 },
-            { '2': 10.0 },
-            { '3': 7.0 },
-            { '5': 5.0 },
-            { '4': 10.0 },
-            { '5': 5.0 },
-            { '5': 5.0 }
+            {'1': 1},
+            {'2': 1},
+            {'3': 1},
+
         ]
     },
     {
         'id': '5',
         'contributions': [
-            { '1': 10.0 },
-            { '1': 5.0 },
-            { '2': 20.0 },
-            { '3': 3.0 },
-            { '8': 2.0 },
-            { '9': 10.0 },
-            { '7': 7.0 },
-            { '2': 5.0 }
+            {'4': 9.0},
+
         ]
     }
 ]
-
 
 
 '''
@@ -71,6 +58,8 @@ GRANT_CONTRIBUTIONS_EXAMPLE = [
         list of lists of grant data
             [[grant_id (str), user_id (str), contribution_amount (float)]]
 '''
+
+
 def translate_data(grants_data):
     grants_list = []
     for g in grants_data:
@@ -80,7 +69,6 @@ def translate_data(grants_data):
             grants_list.append(val)
 
     return grants_list
-
 
 
 '''
@@ -98,6 +86,8 @@ def translate_data(grants_data):
                 }
             }
 '''
+
+
 def aggregate_contributions(grant_contributions):
     contrib_dict = {}
     for proj, user, amount in grant_contributions:
@@ -106,7 +96,6 @@ def aggregate_contributions(grant_contributions):
         contrib_dict[proj][user] = contrib_dict[proj].get(user, 0) + amount
 
     return contrib_dict
-
 
 
 '''
@@ -125,6 +114,8 @@ def aggregate_contributions(grant_contributions):
             {user_id (str): {user_id (str): pair_total (float)}}
 
 '''
+
+
 def get_totals_by_pair(contrib_dict):
     tot_overlap = {}
 
@@ -141,7 +132,6 @@ def get_totals_by_pair(contrib_dict):
                 tot_overlap[k1][k2] += (v1 * v2) ** 0.5
 
     return tot_overlap
-
 
 
 '''
@@ -164,6 +154,8 @@ def get_totals_by_pair(contrib_dict):
         total clr award by grant, analytics, possibly normalized by the normalization factor
             [{'id': proj, 'number_contributions': _num, 'contribution_amount': _sum, 'clr_amount': tot}]
 '''
+
+
 def calculate_clr(aggregated_contributions, pair_totals, threshold, total_pot):
 
     bigtot = 0
@@ -181,13 +173,15 @@ def calculate_clr(aggregated_contributions, pair_totals, threshold, total_pot):
             for k2, v2 in contribz.items():
                 if k2 > k1:
                     # quadratic formula
-                    tot += ((v1 * v2) ** 0.5) / (pair_totals[k1][k2] / (threshold + 1))
+                    tot += ((v1 * v2) ** 0.5) / \
+                        (pair_totals[k1][k2] / (threshold + 1))
 
         if type(tot) == complex:
             tot = float(tot.real)
 
         bigtot += tot
-        totals.append({'id': proj, 'number_contributions': _num, 'contribution_amount': _sum, 'clr_amount': tot})
+        totals.append({'id': proj, 'number_contributions': _num,
+                      'contribution_amount': _sum, 'clr_amount': tot})
 
     global CLR_PERCENTAGE_DISTRIBUTED
 
@@ -198,7 +192,6 @@ def calculate_clr(aggregated_contributions, pair_totals, threshold, total_pot):
             t['clr_amount'] = ((t['clr_amount'] / bigtot) * total_pot)
 
     return totals
-
 
 
 '''
@@ -220,16 +213,22 @@ def calculate_clr(aggregated_contributions, pair_totals, threshold, total_pot):
     returns:
         grants clr award amounts
 '''
+
+
 def run_clr_calcs(grant_contribs_curr, threshold, total_pot):
 
     # get data
     contrib_data = translate_data(grant_contribs_curr)
-
+    print(contrib_data)
+    print()
     # aggregate data
     agg = aggregate_contributions(contrib_data)
-
+    print(agg)
+    print()
     # get pair totals
     ptots = get_totals_by_pair(agg)
+    print(ptots)
+    print()
 
     # clr calcluation
     totals = calculate_clr(agg, ptots, threshold, total_pot)
@@ -237,7 +236,8 @@ def run_clr_calcs(grant_contribs_curr, threshold, total_pot):
     return totals
 
 
-
 if __name__ == '__main__':
-    res = run_clr_calcs(GRANT_CONTRIBUTIONS_EXAMPLE, 25.0, 5000)
+    res = run_clr_calcs(GRANT_CONTRIBUTIONS_EXAMPLE, 25, 1000)
+    print()
+    print("result:")
     print(res)
